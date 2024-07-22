@@ -1,0 +1,288 @@
+library(mgcv)
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(reshape2)
+library(matrixStats)
+library(ebbr)
+library(BiocParallel)
+library(furniture)
+
+source("GAM helpers.R")
+
+######################################################################################################################################
+root = "gam_modelling_data"
+
+centiloid_plot_data <- read.csv(file.path(root, "centiloid_gam_data.csv"))
+tau_plot_data <- read.csv(file.path(root, "tau_gam_data.csv"))
+ptau_plot_data <- read.csv(file.path(root, "ptau_gam_data.csv"))
+abeta_plot_data <- read.csv(file.path(root, "abeta_gam_data.csv"))
+npi_plot_data <- read.csv(file.path(root, "npi_gam_data.csv"))
+mpacctrailsb_plot_data <- read.csv(file.path(root, "mpacctrailsb_gam_data.csv"))
+cdrsb_plot_data <- read.csv(file.path(root, "cdrsb_gam_data.csv"))
+mmse_plot_data <- read.csv(file.path(root, "mmse_gam_data.csv"))
+fdg_plot_data <- read.csv(file.path(root, "fdg_gam_data.csv"))
+meta_roi_plot_data <- read.csv(file.path(root, "meta_roi_gam_data.csv"))
+hippocampal_volume_plot_data <- read.csv(file.path(root, "hippocampal_volume_gam_data.csv"))
+adas13_plot_data <- read.csv(file.path(root, "adas13_gam_data.csv"))
+ecog_s_plot_data <- read.csv(file.path(root, "ecog_s_gam_data.csv"))
+ecog_p_plot_data <- read.csv(file.path(root, "ecog_p_gam_data.csv"))
+
+test <- data.frame(adjusted_new_time = seq(-10, 10, by = 0.1), 
+                   RID = rep(0, length(seq(-10, 10, by = 0.1))), 
+                   PTGENDER = rep(2, length(seq(-10, 10, by = 0.1))),
+                   PTEDUCAT = rep(16, length(seq(-10, 10, by = 0.1))),
+                   age = rep(73, length(seq(-10, 10, by = 0.1))),
+                   apoe = "E3", 
+                   CDGLOBAL = rep(0, length(seq(-10, 10, by = 0.1))))
+
+#####################################################################################################
+# Centiloid
+#####################################################################################################
+centiloid_plot_data$RID <- as.numeric(centiloid_plot_data$RID)
+
+gam.model_centiloid <- mgcv::gam(formula = Centiloid ~ s(adjusted_new_time, bs = "cs", k = 4, fx = TRUE) +
+                             s(RID, bs = "re") + 
+                             age + PTEDUCAT + apoe + PTGENDER + CDGLOBAL,
+                           data = centiloid_plot_data,
+                           family = gaussian,
+                           method = "ML")
+
+m2.d_centiloid <- Deriv(gam.model_centiloid, newdata = test) #Calculating derivatives of the model
+
+m2.dci_centiloid <- confint(m2.d_centiloid, term = 'adjusted_new_time') #Calculating upper and lower confidence interval
+
+m2.dsig_centiloid <- signifD(seq(-10,10,by=0.1), d = m2.d_centiloid[['adjusted_new_time']]$deriv, m2.dci_centiloid[['adjusted_new_time']]$upper, m2.dci_centiloid[['adjusted_new_time']]$lower) # calculating the significance of change
+
+modelFit_centiloid <- data.frame(predict(gam.model_centiloid, se = TRUE,
+                                   data.frame(adjusted_new_time = centiloid_plot_data$adjusted_new_time, 
+                                              RID = 0, 
+                                              age = 73, 
+                                              PTEDUCAT = 16, 
+                                              PTGENDER = 2,
+                                              CDGLOBAL = 0,
+                                              apoe = "E3"))) #t=df.conv$t, RID=0)))
+df.fit_centiloid <- data.frame(cbind(adjusted_new_time = centiloid_plot_data$adjusted_new_time, #t = df.conv$t,
+                               meas = as.numeric(centiloid_plot_data$Centiloid),
+                               # meas = df.conv$meas,
+                               fit = modelFit_centiloid$fit,
+                               upperBound = modelFit_centiloid$fit + 2 * modelFit_centiloid$se.fit,
+                               lowerBound = modelFit_centiloid$fit - 2 * modelFit_centiloid$se.fit))
+df.fit_centiloid <- df.fit_centiloid[!is.na(df.fit_centiloid$meas),]
+meas_fn_centiloid <- "PET Aβ Centiloid"
+
+gam.p_centiloid <- ggplot(data=df.fit_centiloid, aes(adjusted_new_time,meas)) + ylim(c(min(df.fit_centiloid$lowerBound),max(df.fit_centiloid$upperBound))) +
+  geom_line(aes(adjusted_new_time, fit), color = "black", size=0.25, data=df.fit_centiloid) +
+  ggplot2::geom_line(aes(y=upperBound),se=FALSE, stat="smooth",linetype="dashed",alpha=.5) +
+  ggplot2::geom_line(aes(y=lowerBound),se=FALSE, stat="smooth",linetype="dashed",alpha=.5) +
+  theme_blank() + theme(axis.line = element_line(size = 0.5, colour = "black", linetype=1)) + 
+  ggtitle("") + 
+  theme(plot.title=element_text(hjust=0.5),text=element_text(size=15)) +
+  theme(legend.position="none") +
+  xlab("Years from Aβ+") + ylab(meas_fn_centiloid)
+
+inter_centiloid <- na.contiguous(m2.dsig_centiloid$incr)
+gam.p_centiloid <- gam.p_centiloid + 
+  geom_line(aes(adjusted_new_time, fit), color = "black", size=1.5, data=df.fit_centiloid[df.fit_centiloid$adjusted_new_time>=min(inter_centiloid) & df.fit_centiloid$adjusted_new_time<=max(inter_centiloid),]) + 
+  ggplot2::geom_vline(aes(xintercept=min(inter_centiloid)),linetype="dashed",color="black") + #inflection point
+  ggplot2::annotate(geom="text",label=paste0(round(min(inter_centiloid),digits=1)),x=(min(inter_centiloid)-1),angle='90',y=10)
+
+#####################################################################################################
+# fdg
+#####################################################################################################
+fdg_plot_data$RID <- as.numeric(fdg_plot_data$RID)
+
+gam.model_fdg <- mgcv::gam(formula = adjusted_Meta_ROI ~ s(adjusted_new_time, bs = "cs", k = 4, fx = TRUE) +
+                                   s(RID, bs = "re") + 
+                                   age + PTEDUCAT + apoe + PTGENDER + CDGLOBAL,
+                                 data = fdg_plot_data,
+                                 family = gaussian,
+                                 method = "ML")
+
+m2.d_fdg <- Deriv(gam.model_fdg, newdata = test) #Calculating derivatives of the model
+
+m2.dci_fdg <- confint(m2.d_fdg, term = 'adjusted_new_time') #Calculating upper and lower confidence interval
+m2.dsig_fdg <- signifD(seq(-10,10,by=0.1), d = m2.d_fdg[['adjusted_new_time']]$deriv, m2.dci_fdg[['adjusted_new_time']]$upper, m2.dci_fdg[['adjusted_new_time']]$lower) # calculating the significance of change
+
+modelFit_fdg <- data.frame(predict(gam.model_fdg, se = TRUE,
+                                         data.frame(adjusted_new_time = fdg_plot_data$adjusted_new_time, 
+                                                    RID = 0, 
+                                                    age = 73, 
+                                                    PTEDUCAT = 16,
+                                                    CDGLOBAL = 0,
+                                                    PTGENDER = 2,
+                                                    apoe = "E3"))) #t=df.conv$t, RID=0)))
+df.fit_fdg <- data.frame(cbind(adjusted_new_time = fdg_plot_data$adjusted_new_time, #t = df.conv$t,
+                                     meas = fdg_plot_data$adjusted_Meta_ROI,
+                                     # meas = df.conv$meas,
+                                     fit = modelFit_fdg$fit,
+                                     upperBound = modelFit_fdg$fit + 2 * modelFit_fdg$se.fit,
+                                     lowerBound = modelFit_fdg$fit - 2 * modelFit_fdg$se.fit))
+df.fit_fdg <- df.fit_fdg[!is.na(df.fit_fdg$meas),]
+meas_fn_fdg <- "FDG PET Meta-ROI"
+
+gam.p_fdg <- ggplot(data=df.fit_fdg, aes(adjusted_new_time,meas)) + ylim(c(min(df.fit_fdg$lowerBound),max(df.fit_fdg$upperBound))) +
+  geom_line(aes(adjusted_new_time, fit), color = "black", size=0.25, data=df.fit_fdg) +
+  ggplot2::geom_line(aes(y=upperBound),se=FALSE, stat="smooth",linetype="dashed",alpha=.5) +
+  ggplot2::geom_line(aes(y=lowerBound),se=FALSE, stat="smooth",linetype="dashed",alpha=.5) +
+  theme_blank() + theme(axis.line = element_line(size = 0.5, colour = "black", linetype=1)) + 
+  ggtitle("") + 
+  theme(plot.title=element_text(hjust=0.5),text=element_text(size=15)) +
+  theme(legend.position="none") +
+  xlab("Years from Aβ+") + ylab(meas_fn_fdg)
+
+inter_fdg <- na.contiguous(m2.dsig_fdg$decr)
+gam.p_fdg <- gam.p_fdg + 
+  geom_line(aes(adjusted_new_time, fit), color = "black", size=1.5, data=df.fit_fdg[df.fit_fdg$adjusted_new_time>=min(inter_fdg) & df.fit_fdg$adjusted_new_time<=max(inter_fdg),]) + 
+  ggplot2::geom_vline(aes(xintercept=min(inter_fdg)),linetype="dashed",color="black") + #inflection point
+  ggplot2::annotate(geom="text",label=paste0(round(min(inter_fdg),digits=1)),x=(min(inter_fdg)-1),angle='90',y=1.28)
+
+#####################################################################################################
+# csf tau
+#####################################################################################################
+tau_plot_data$RID <- as.numeric(tau_plot_data$RID)
+
+gam.model_tau <- mgcv::gam(formula = TAU ~ s(adjusted_new_time, bs = "cs", k = 4, fx = TRUE) + # k = 4????, fx = TRUE, bs = "cs"
+                             s(RID, bs = "re") + 
+                             age + PTEDUCAT + apoe + PTGENDER + CDGLOBAL,
+                           data = tau_plot_data,
+                           family = gaussian,
+                           method = "ML")
+
+m2.d_tau <- Deriv(gam.model_tau, newdata = test) #Calculating derivatives of the model
+
+m2.dci_tau <- confint(m2.d_tau, term = 'adjusted_new_time') #Calculating upper and lower confidence interval
+m2.dsig_tau <- signifD(seq(-10,10,by=0.1), d = m2.d_tau[['adjusted_new_time']]$deriv, m2.dci_tau[['adjusted_new_time']]$upper, m2.dci_tau[['adjusted_new_time']]$lower) # calculating the significance of change
+
+modelFit_tau <- data.frame(predict(gam.model_tau, se = TRUE,
+                                   data.frame(adjusted_new_time = tau_plot_data$adjusted_new_time, 
+                                              RID = 0, 
+                                              age = 73, 
+                                              PTEDUCAT = 16, 
+                                              CDGLOBAL = 0,
+                                              PTGENDER = 2,
+                                              apoe = "E3"))) #t=df.conv$t, RID=0)))
+df.fit_tau <- data.frame(cbind(adjusted_new_time = tau_plot_data$adjusted_new_time, #t = df.conv$t,
+                               meas = tau_plot_data$TAU,
+                               # meas = df.conv$meas,
+                               fit = modelFit_tau$fit,
+                               upperBound = modelFit_tau$fit + 2 * modelFit_tau$se.fit,
+                               lowerBound = modelFit_tau$fit - 2 * modelFit_tau$se.fit))
+df.fit_tau <- df.fit_tau[!is.na(df.fit_tau$meas),]
+meas_fn_tau <- "CSF Total Tau"
+
+gam.p_tau <- ggplot(data=df.fit_tau, aes(adjusted_new_time,meas)) + ylim(c(min(df.fit_tau$lowerBound),max(df.fit_tau$upperBound))) +
+  geom_line(aes(adjusted_new_time, fit), color = "black", size=0.25, data=df.fit_tau) +
+  ggplot2::geom_line(aes(y=upperBound),se=FALSE, stat="smooth",linetype="dashed",alpha=.5) +
+  ggplot2::geom_line(aes(y=lowerBound),se=FALSE, stat="smooth",linetype="dashed",alpha=.5) +
+  theme_blank() + theme(axis.line = element_line(size = 0.5, colour = "black", linetype=1)) + 
+  ggtitle("") + 
+  theme(plot.title=element_text(hjust=0.5),text=element_text(size=15)) +
+  theme(legend.position="none") +
+  xlab("Years from Aβ+") + ylab(meas_fn_tau)
+
+inter_tau <- na.contiguous(m2.dsig_tau$incr)
+gam.p_tau <- gam.p_tau + 
+  geom_line(aes(adjusted_new_time, fit), color = "black", size=1.5, data=df.fit_tau[df.fit_tau$adjusted_new_time>=min(inter_tau) & df.fit_tau$adjusted_new_time<=max(inter_tau),]) + 
+  ggplot2::geom_vline(aes(xintercept=min(inter_tau)),linetype="dashed",color="black") + #inflection point
+  ggplot2::annotate(geom="text",label=paste0(round(min(inter_tau),digits=1)),x=(min(inter_tau)-1),angle='90',y=300)
+
+#####################################################################################################
+# csf ptau
+#####################################################################################################
+ptau_plot_data$RID <- as.numeric(ptau_plot_data$RID)
+
+gam.model_ptau <- mgcv::gam(formula = PTAU ~ s(adjusted_new_time, bs = "cs", k = 4, fx = TRUE) +
+                             s(RID, bs = "re") + 
+                             age + PTEDUCAT + apoe + PTGENDER + CDGLOBAL,
+                           data = ptau_plot_data,
+                           family = gaussian,
+                           method = "ML")
+
+m2.d_ptau <- Deriv(gam.model_ptau, newdata = test) #Calculating derivatives of the model
+
+m2.dci_ptau <- confint(m2.d_ptau, term = 'adjusted_new_time') #Calculating upper and lower confidence interval
+m2.dsig_ptau <- signifD(seq(-10,10,by=0.1), d = m2.d_ptau[['adjusted_new_time']]$deriv, m2.dci_ptau[['adjusted_new_time']]$upper, m2.dci_ptau[['adjusted_new_time']]$lower) # calculating the significance of change
+
+modelFit_ptau <- data.frame(predict(gam.model_ptau, se = TRUE,
+                                   data.frame(adjusted_new_time = ptau_plot_data$adjusted_new_time, 
+                                              RID = 0, 
+                                              age = 73, 
+                                              PTEDUCAT = 16, 
+                                              CDGLOBAL = 0,
+                                              PTGENDER = 2,
+                                              apoe = "E3"))) #t=df.conv$t, RID=0)))
+df.fit_ptau <- data.frame(cbind(adjusted_new_time = ptau_plot_data$adjusted_new_time, #t = df.conv$t,
+                               meas = ptau_plot_data$PTAU,
+                               # meas = df.conv$meas,
+                               fit = modelFit_ptau$fit,
+                               upperBound = modelFit_ptau$fit + 2 * modelFit_ptau$se.fit,
+                               lowerBound = modelFit_ptau$fit - 2 * modelFit_ptau$se.fit))
+df.fit_ptau <- df.fit_ptau[!is.na(df.fit_ptau$meas),]
+meas_fn_ptau <- "CSF P-Tau181"
+
+gam.p_ptau <- ggplot(data=df.fit_ptau, aes(adjusted_new_time,meas)) + ylim(c(min(df.fit_ptau$lowerBound),max(df.fit_ptau$upperBound))) +
+  geom_line(aes(adjusted_new_time, fit), color = "black", size=0.25, data=df.fit_ptau) +
+  ggplot2::geom_line(aes(y=upperBound),se=FALSE, stat="smooth",linetype="dashed",alpha=.5) +
+  ggplot2::geom_line(aes(y=lowerBound),se=FALSE, stat="smooth",linetype="dashed",alpha=.5) +
+  theme_blank() + theme(axis.line = element_line(size = 0.5, colour = "black", linetype=1)) + 
+  ggtitle("") + 
+  theme(plot.title=element_text(hjust=0.5),text=element_text(size=15)) +
+  theme(legend.position="none") +
+  xlab("Years from Aβ+") + ylab(meas_fn_ptau)
+
+inter_ptau <- na.contiguous(m2.dsig_ptau$incr)
+gam.p_ptau <- gam.p_ptau + 
+  geom_line(aes(adjusted_new_time, fit), color = "black", size=1.5, data=df.fit_ptau[df.fit_ptau$adjusted_new_time>=min(inter_ptau) & df.fit_ptau$adjusted_new_time<=max(inter_ptau),]) + 
+  ggplot2::geom_vline(aes(xintercept=min(inter_ptau)),linetype="dashed",color="black") + #inflection point
+  ggplot2::annotate(geom="text",label=paste0(round(min(inter_ptau),digits=1)),x=(min(inter_ptau)-1),angle='90',y=27)
+
+#####################################################################################################
+# csf Amyloid
+#####################################################################################################
+abeta_plot_data$RID <- as.numeric(abeta_plot_data$RID)
+
+gam.model_abeta <- mgcv::gam(formula = ABETA ~ s(adjusted_new_time, bs = "cs", k = 4, fx = TRUE) +
+                              s(RID, bs = "re") + 
+                              age + PTEDUCAT + apoe + PTGENDER + CDGLOBAL,
+                            data = abeta_plot_data,
+                            family = gaussian,
+                            method = "ML")
+
+m2.d_abeta <- Deriv(gam.model_abeta, newdata = test) #Calculating derivatives of the model
+
+m2.dci_abeta <- confint(m2.d_abeta, term = 'adjusted_new_time') #Calculating upper and lower confidence interval
+m2.dsig_abeta <- signifD(seq(-10,10,by=0.1), d = m2.d_abeta[['adjusted_new_time']]$deriv, m2.dci_abeta[['adjusted_new_time']]$upper, m2.dci_abeta[['adjusted_new_time']]$lower) # calculating the significance of change
+
+modelFit_abeta <- data.frame(predict(gam.model_abeta, se = TRUE,
+                                    data.frame(adjusted_new_time = abeta_plot_data$adjusted_new_time, 
+                                               RID = 0, 
+                                               age = 73, 
+                                               PTEDUCAT = 16, 
+                                               CDGLOBAL = 0,
+                                               PTGENDER = 2,
+                                               apoe = "E3"))) #t=df.conv$t, RID=0)))
+df.fit_abeta <- data.frame(cbind(adjusted_new_time = abeta_plot_data$adjusted_new_time, #t = df.conv$t,
+                                meas = abeta_plot_data$ABETA,
+                                # meas = df.conv$meas,
+                                fit = modelFit_abeta$fit,
+                                upperBound = modelFit_abeta$fit + 2 * modelFit_abeta$se.fit,
+                                lowerBound = modelFit_abeta$fit - 2 * modelFit_abeta$se.fit))
+df.fit_abeta <- df.fit_abeta[!is.na(df.fit_abeta$meas),]
+meas_fn_abeta <- "CSF Aβ42 "
+
+gam.p_abeta <- ggplot(data=df.fit_abeta, aes(adjusted_new_time,meas)) + ylim(c(min(df.fit_abeta$lowerBound),max(df.fit_abeta$upperBound))) +
+  geom_line(aes(adjusted_new_time, fit), color = "black", size=0.25, data=df.fit_abeta) +
+  ggplot2::geom_line(aes(y=upperBound),se=FALSE, stat="smooth",linetype="dashed",alpha=.5) +
+  ggplot2::geom_line(aes(y=lowerBound),se=FALSE, stat="smooth",linetype="dashed",alpha=.5) +
+  theme_blank() + theme(axis.line = element_line(size = 0.5, colour = "black", linetype=1)) + 
+  ggtitle("") + 
+  theme(plot.title=element_text(hjust=0.5),text=element_text(size=15)) +
+  theme(legend.position="none") +
+  xlab("Years from Aβ+") + ylab(meas_fn_abeta)
+
+inter_abeta <- na.contiguous(m2.dsig_abeta$decr)
+gam.p_abeta <- gam.p_abeta + 
+  geom_line(aes(adjusted_new_time, fit), color = "black", size=1.5, data=df.fit_abeta[df.fit_abeta$adjusted_new_time>=min(inter_abeta) & df.fit_abeta$adjusted_new_time<=max(inter_abeta),]) + 
+  ggplot2::geom_vline(aes(xintercept=min(inter_abeta)),linetype="dashed",color="black") + #inflection point
+  ggplot2::annotate(geom="text",label=paste0(round(min(inter_abeta),digits=1)),x=(min(inter_abeta)-1),angle='90',y=1300)
