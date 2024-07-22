@@ -7,6 +7,7 @@ library(matrixStats)
 library(ebbr)
 library(BiocParallel)
 library(furniture)
+library(patchwork)
 
 source("GAM helpers.R")
 
@@ -94,7 +95,7 @@ fdg_plot_data$RID <- as.numeric(fdg_plot_data$RID)
 
 gam.model_fdg <- mgcv::gam(formula = adjusted_Meta_ROI ~ s(adjusted_new_time, bs = "cs", k = 4, fx = TRUE) +
                                    s(RID, bs = "re") + 
-                                   age + PTEDUCAT + apoe + PTGENDER + CDGLOBAL,
+                                   age + PTEDUCAT + apoe + PTGENDER,
                                  data = fdg_plot_data,
                                  family = gaussian,
                                  method = "ML")
@@ -131,20 +132,20 @@ gam.p_fdg <- ggplot(data=df.fit_fdg, aes(adjusted_new_time,meas)) + ylim(c(min(d
   theme(legend.position="none") +
   xlab("Years from Aβ+") + ylab(meas_fn_fdg)
 
-inter_fdg <- na.contiguous(m2.dsig_fdg$decr)
-gam.p_fdg <- gam.p_fdg + 
-  geom_line(aes(adjusted_new_time, fit), color = "black", size=1.5, data=df.fit_fdg[df.fit_fdg$adjusted_new_time>=min(inter_fdg) & df.fit_fdg$adjusted_new_time<=max(inter_fdg),]) + 
-  ggplot2::geom_vline(aes(xintercept=min(inter_fdg)),linetype="dashed",color="black") + #inflection point
-  ggplot2::annotate(geom="text",label=paste0(round(min(inter_fdg),digits=1)),x=(min(inter_fdg)-1),angle='90',y=1.28)
+inter_fdg <- na.contiguous(m2.dsig_fdg$decr) #no significance
+#  gam.p_fdg <- gam.p_fdg + 
+#    geom_line(aes(adjusted_new_time, fit), color = "black", size=1.5, data=df.fit_fdg[df.fit_fdg$adjusted_new_time>=min(inter_fdg) & df.fit_fdg$adjusted_new_time<=max(inter_fdg),]) + 
+#    ggplot2::geom_vline(aes(xintercept=min(inter_fdg)),linetype="dashed",color="black") + #inflection point
+#    ggplot2::annotate(geom="text",label=paste0(round(min(inter_fdg),digits=1)),x=(min(inter_fdg)-1),angle='90',y=1.28)
 
 #####################################################################################################
 # csf tau
 #####################################################################################################
 tau_plot_data$RID <- as.numeric(tau_plot_data$RID)
 
-gam.model_tau <- mgcv::gam(formula = TAU ~ s(adjusted_new_time, bs = "cs", k = 4, fx = TRUE) + # k = 4????, fx = TRUE, bs = "cs"
+gam.model_tau <- mgcv::gam(formula = TAU ~ s(adjusted_new_time, bs = "cs", k = 4, fx = TRUE) + 
                              s(RID, bs = "re") + 
-                             age + PTEDUCAT + apoe + PTGENDER + CDGLOBAL,
+                             age + PTEDUCAT + apoe + PTGENDER,
                            data = tau_plot_data,
                            family = gaussian,
                            method = "ML")
@@ -194,7 +195,7 @@ ptau_plot_data$RID <- as.numeric(ptau_plot_data$RID)
 
 gam.model_ptau <- mgcv::gam(formula = PTAU ~ s(adjusted_new_time, bs = "cs", k = 4, fx = TRUE) +
                              s(RID, bs = "re") + 
-                             age + PTEDUCAT + apoe + PTGENDER + CDGLOBAL,
+                             age + PTEDUCAT + apoe + PTGENDER,
                            data = ptau_plot_data,
                            family = gaussian,
                            method = "ML")
@@ -244,7 +245,7 @@ abeta_plot_data$RID <- as.numeric(abeta_plot_data$RID)
 
 gam.model_abeta <- mgcv::gam(formula = ABETA ~ s(adjusted_new_time, bs = "cs", k = 4, fx = TRUE) +
                               s(RID, bs = "re") + 
-                              age + PTEDUCAT + apoe + PTGENDER + CDGLOBAL,
+                              age + PTEDUCAT + apoe + PTGENDER,
                             data = abeta_plot_data,
                             family = gaussian,
                             method = "ML")
@@ -301,13 +302,6 @@ gam.model_meta_roi <- mgcv::gam(formula = meta_ROI ~ s(adjusted_new_time, bs = "
                              family = gaussian,
                              method = "ML")
 
-# gam.model_meta_roi <- mgcv::gam(formula = meta_ROI ~ s(adjusted_new_time, bs = "cs", k = 4, sp = 2) +
-#                                 s(RID, bs = "re") +
-#                                 age + PTEDUCAT + apoe + PTGENDER,
-#                               data = meta_roi_plot_data,
-#                               family = gaussian,
-#                               method = "REML")
-
 m2.d_meta_roi <- Deriv(gam.model_meta_roi, newdata = test) #Calculating derivatives of the model
 
 m2.dci_meta_roi <- confint(m2.d_meta_roi, term = 'adjusted_new_time') #Calculating upper and lower confidence interval
@@ -341,7 +335,6 @@ gam.p_meta_roi <- ggplot(data=df.fit_meta_roi, aes(adjusted_new_time,meas)) + yl
   xlab("Years from Aβ+") + ylab(meas_fn_meta_roi)
 
 inter_meta_roi <- na.contiguous(m2.dsig_meta_roi$decr) #no significance
-
 # gam.p_meta_roi <- gam.p_meta_roi + 
 #   geom_line(aes(adjusted_new_time, fit), color = "black", size=1.5, data=df.fit_meta_roi[df.fit_meta_roi$adjusted_new_time>=min(inter_meta_roi) & df.fit_meta_roi$adjusted_new_time<=max(inter_meta_roi),]) + 
 #   ggplot2::geom_vline(aes(xintercept=min(inter_meta_roi)),linetype="dashed",color="black") + #inflection point
@@ -699,3 +692,16 @@ gam.p_cdrsb <- gam.p_cdrsb +
   geom_line(aes(adjusted_new_time, fit), color = "black", size=1.5, data=df.fit_cdrsb[df.fit_cdrsb$adjusted_new_time>=min(inter_cdrsb) & df.fit_cdrsb$adjusted_new_time<=max(inter_cdrsb),]) + 
   ggplot2::geom_vline(aes(xintercept=min(inter_cdrsb)),linetype="dashed",color="black") + #inflection point
   ggplot2::annotate(geom="text",label=paste0(round(min(inter_cdrsb),digits=1)),x=(min(inter_cdrsb)-1),angle='90',y= 0.4)
+
+#####################################################################################################
+############################################# Plotting ##############################################
+#####################################################################################################
+# physical biomarkers
+csf_centiloid <- gam.p_centiloid + gam.p_abeta + gam.p_ptau + gam.p_tau + plot_layout(nrow = 2)
+
+scans <- gam.p_hippocampal_volume + gam.p_meta_roi + gam.p_fdg + plot_layout(nrow = 1)
+
+(csf_centiloid) / (scans) + plot_layout(heights = c(2, 1)) + plot_annotation(tag_levels = 'a') &  theme(plot.tag = element_text(face = 'bold'))
+
+# cognitive assessments
+gam.p_cdrsb + gam.p_adas13 + gam.p_mmse + gam.p_mpacctrailsb + gam.p_ecog_p + gam.p_ecog_s + plot_layout(nrow = 2) + plot_annotation(tag_levels = 'a') &  theme(plot.tag = element_text(face = 'bold'))
