@@ -93,7 +93,7 @@ cdglobal_data <- cdglobal_data %>%
   dplyr::select(RID, CDR.DATE, CDGLOBAL)
 
 #getting APOE type
-apoeres <- read.csv("~/Data/APOERES.csv") %>% #OR Local: "C:\\Documents\\paper data longitudinal phases\\APOERES.csv"
+apoeres <- read.csv("~/Data/APOERES.csv") %>% #OR Local: "~/Data/APOERES.csv"
   dplyr::select(RID, APGEN1, APGEN2) %>%
   dplyr::mutate(apoe = paste(paste("E", APGEN1, sep = ""), paste("E", APGEN2, sep = ""), sep = "/"),
                 RID = as.character(RID)) %>%
@@ -179,7 +179,7 @@ centiloid_plot_data <- merge(diagnoses, centiloid_plot_data, all = TRUE) %>%
 centiloid_plot_data <- centiloid_plot_data %>%
   dplyr::select(RID, diags, Centiloid, PTGENDER, PTEDUCAT, apoe, age, adjusted_new_time)
 
-write.csv(centiloid_plot_data, "C:\\Work Folder\\paper data longitudinal phases\\centiloid_lcmm_data.csv")
+write.csv(centiloid_plot_data, "~/Projects/GAM_models_Amyloid_converted/gam_modelling_data/centiloid_lcmm_data.csv")
 
 #####################################################################################
 # looking at change in fdg PET Meta-ROI
@@ -221,4 +221,4 @@ fdg_plot_data <- merge(diagnoses, fdg_plot_data, all = TRUE) %>%
 fdg_plot_data <- fdg_plot_data %>%
   dplyr::select(RID, diags, adjusted_Meta_ROI, PTGENDER, PTEDUCAT, apoe, age, adjusted_new_time)
 
-write.csv(fdg_plot_data, "("~/Projects/GAM_models_Amyloid_converted/gam_modelling_data/fdg_gam_data.csv")
+write.csv(fdg_plot_data, "~/Projects/GAM_models_Amyloid_converted/gam_modelling_data/fdg_gam_data.csv")
