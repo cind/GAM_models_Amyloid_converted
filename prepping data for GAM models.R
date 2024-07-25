@@ -222,3 +222,43 @@ fdg_plot_data <- fdg_plot_data %>%
   dplyr::select(RID, diags, adjusted_Meta_ROI, PTGENDER, PTEDUCAT, apoe, age, adjusted_new_time)
 
 write.csv(fdg_plot_data, "~/Projects/GAM_models_Amyloid_converted/gam_modelling_data/fdg_gam_data.csv")
+
+
+#############################################################################
+# MRI: Meta-ROI
+#############################################################################
+
+# calling in freesurfer files (ADNI1 left out due to strange correlation with age)
+# adni1_1.5 <- read.csv("~/Data/freesurfer_4.3_ADNI1_protocol_1.5T.csv") %>%
+#   dplyr::mutate(STUDY = "ADNI1",
+#                 Field_Strength = "1.5T")
+adni2_3 <- read.csv("~/Data/freesurfer_5.1_ADNI2GO_protocol_3T.csv") %>%
+  dplyr::mutate(STUDY = "ADNI2",
+                Field_Strength = "3T")
+adni3_3 <- read.csv("~/Data/freesurfer_6.0_ADNI3_protocol_3T.csv") %>%
+  dplyr::mutate(STUDY = "ADNI3",
+                Field_Strength = "3T")
+freesurfer_data <- read.csv("~/Data/adni3_freesurfer.csv") %>% # received this file from Mark - files on LONI were not updated to include recent scans
+  dplyr::rename(EXAMDATE = SCANDATE) %>%
+  dplyr::mutate(Field_Strength = "3T")
+
+# creating one dataset with freesurfer data
+mri_list <- list(adni2_3, adni3_3, freesurfer_data)
+mri_data <- adni2_3
+for ( df in mri_list ) {
+  mri_data <-merge(mri_data, df, all=T)
+}
+mri_data <- mri_data %>%
+  dplyr::filter(!(OVERALLQC == "Fail" | OVERALLQC == "" | OVERALLQC == " ")) %>%
+  dplyr::distinct(across(c(-TEMPQC, -FRONTQC, -VENTQC, -PARQC, -INSULAQC, -OCCQC, -BGQC, -CWMQC, -Field_Strength, -HIPPOQC, -VISCODE, -X, -SuperiorQC, -IMAGETYPE, -update_stamp, -COLPROT, -VISCODE2, -LONISID, -RUNDATE, -STATUS, -VERSION, -LHIPQC, -RHIPQC)))
+
+#merging demographics and freesurfer data
+mri_data <- merge(mri_data, dem_all, all.x = TRUE) %>%
+  dplyr::mutate(age = round(lubridate::time_length(difftime(EXAMDATE, birthdate), "years"), digits = 1)) %>%
+  dplyr::filter(OVERALLQC == "Pass")
+
+mri_data <- mri_data[,colSums(is.na(mri_data))<nrow(mri_data)]
+
+#making sure that the adjusted volumes are back in - do subcortical volumes also need to be icv adjusted?
+volumes <- mri_data %>%
+  dplyr::select(contains("CV") | contains("SV"))
