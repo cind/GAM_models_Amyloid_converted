@@ -1,14 +1,14 @@
 # GAM_models_Amyloid_converted_SAA
 ############################################################################################
-# Repo used for Paper: "Timing of Alzheimer’s Disease Biomarker Progressions: A Two-Decade 
-# Observational Study from the Alzheimer’s Disease Neuroimaging Initiative (ADNI)
-# By: Schaap, Thropp, & Tosun
-#
-# Project using sub-cohort of ADNI participants who converted from AB PET- to AB PET+
-# using Centiloid = 20 as a threshold for AB status. We used GAM models to estimate 
-# trajectories in several different biological and cognitive outcome measures to detect
-# the point in time that slopes of the trajectories begin to significantly differ from
-# a slope of 0. Below is a short description of the different files/folders in the repo.
+Repo used for Paper: "Timing of Alzheimer’s Disease Biomarker Progressions: A Two-Decade 
+Observational Study from the Alzheimer’s Disease Neuroimaging Initiative (ADNI)
+By: Schaap, Thropp, & Tosun
+
+Project using sub-cohort of ADNI participants who converted from AB PET- to AB PET+
+using Centiloid = 20 as a threshold for AB status. We used GAM models to estimate 
+trajectories in several different biological and cognitive outcome measures to detect
+the point in time that slopes of the trajectories begin to significantly differ from
+a slope of 0. Below is a short description of the different files/folders in the repo.
 ############################################################################################
 
 gam_helpers: contains functions needed to run gam_models
