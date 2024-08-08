@@ -41,10 +41,11 @@ test <- data.frame(adjusted_new_time = seq(-10, 10, by = 0.1),
 # Centiloid
 #####################################################################################################
 centiloid_plot_data$RID <- as.numeric(centiloid_plot_data$RID)
+centiloid_plot_data$PTGENDER <- as.factor(centiloid_plot_data$PTGENDER)
 
 gam.model_centiloid <- mgcv::gam(formula = Centiloid ~ s(adjusted_new_time, bs = "cs", k = 4, fx = TRUE) +
                              s(RID, bs = "re") + 
-                             age + PTEDUCAT + apoe + PTGENDER + CDGLOBAL,
+                             age + PTEDUCAT + apoe + PTGENDER,
                            data = centiloid_plot_data,
                            family = gaussian,
                            method = "ML")
@@ -65,7 +66,6 @@ modelFit_centiloid <- data.frame(predict(gam.model_centiloid, se = TRUE,
                                               apoe = "E3"))) #t=df.conv$t, RID=0)))
 df.fit_centiloid <- data.frame(cbind(adjusted_new_time = centiloid_plot_data$adjusted_new_time, #t = df.conv$t,
                                meas = as.numeric(centiloid_plot_data$Centiloid),
-                               # meas = df.conv$meas,
                                fit = modelFit_centiloid$fit,
                                upperBound = modelFit_centiloid$fit + 2 * modelFit_centiloid$se.fit,
                                lowerBound = modelFit_centiloid$fit - 2 * modelFit_centiloid$se.fit))
@@ -86,12 +86,13 @@ inter_centiloid <- na.contiguous(m2.dsig_centiloid$incr)
 gam.p_centiloid <- gam.p_centiloid + 
   geom_line(aes(adjusted_new_time, fit), color = "black", size=1.5, data=df.fit_centiloid[df.fit_centiloid$adjusted_new_time>=min(inter_centiloid) & df.fit_centiloid$adjusted_new_time<=max(inter_centiloid),]) + 
   ggplot2::geom_vline(aes(xintercept=min(inter_centiloid)),linetype="dashed",color="black") + #inflection point
-  ggplot2::annotate(geom="text",label=paste0(round(min(inter_centiloid),digits=1)),x=(min(inter_centiloid)-1),angle='90',y=10)
+  ggplot2::annotate(geom="text",label=paste0(round(min(inter_centiloid),digits=1)),x=(min(inter_centiloid)-1),angle='90',y=14)
 
 #####################################################################################################
 # fdg
 #####################################################################################################
 fdg_plot_data$RID <- as.numeric(fdg_plot_data$RID)
+fdg_plot_data$PTGENDER <- as.factor(fdg_plot_data$PTGENDER)
 
 gam.model_fdg <- mgcv::gam(formula = adjusted_Meta_ROI ~ s(adjusted_new_time, bs = "cs", k = 4, fx = TRUE) +
                                    s(RID, bs = "re") + 
@@ -132,7 +133,8 @@ gam.p_fdg <- ggplot(data=df.fit_fdg, aes(adjusted_new_time,meas)) + ylim(c(min(d
   theme(legend.position="none") +
   xlab("Years from Aβ+") + ylab(meas_fn_fdg)
 
-inter_fdg <- na.contiguous(m2.dsig_fdg$decr) #no significance
+#taken out since no significant parts of slope
+#  inter_fdg <- na.contiguous(m2.dsig_fdg$decr) #no significance
 #  gam.p_fdg <- gam.p_fdg + 
 #    geom_line(aes(adjusted_new_time, fit), color = "black", size=1.5, data=df.fit_fdg[df.fit_fdg$adjusted_new_time>=min(inter_fdg) & df.fit_fdg$adjusted_new_time<=max(inter_fdg),]) + 
 #    ggplot2::geom_vline(aes(xintercept=min(inter_fdg)),linetype="dashed",color="black") + #inflection point
@@ -142,6 +144,7 @@ inter_fdg <- na.contiguous(m2.dsig_fdg$decr) #no significance
 # csf tau
 #####################################################################################################
 tau_plot_data$RID <- as.numeric(tau_plot_data$RID)
+tau_plot_data$PTGENDER <- as.factor(tau_plot_data$PTGENDER)
 
 gam.model_tau <- mgcv::gam(formula = TAU ~ s(adjusted_new_time, bs = "cs", k = 4, fx = TRUE) + 
                              s(RID, bs = "re") + 
@@ -186,12 +189,13 @@ inter_tau <- na.contiguous(m2.dsig_tau$incr)
 gam.p_tau <- gam.p_tau + 
   geom_line(aes(adjusted_new_time, fit), color = "black", size=1.5, data=df.fit_tau[df.fit_tau$adjusted_new_time>=min(inter_tau) & df.fit_tau$adjusted_new_time<=max(inter_tau),]) + 
   ggplot2::geom_vline(aes(xintercept=min(inter_tau)),linetype="dashed",color="black") + #inflection point
-  ggplot2::annotate(geom="text",label=paste0(round(min(inter_tau),digits=1)),x=(min(inter_tau)-1),angle='90',y=300)
+  ggplot2::annotate(geom="text",label=paste0(round(min(inter_tau),digits=1)),x=(min(inter_tau)-1),angle='90',y=330)
 
 #####################################################################################################
 # csf ptau
 #####################################################################################################
 ptau_plot_data$RID <- as.numeric(ptau_plot_data$RID)
+ptau_plot_data$PTGENDER <- as.factor(ptau_plot_data$PTGENDER)
 
 gam.model_ptau <- mgcv::gam(formula = PTAU ~ s(adjusted_new_time, bs = "cs", k = 4, fx = TRUE) +
                              s(RID, bs = "re") + 
@@ -215,7 +219,6 @@ modelFit_ptau <- data.frame(predict(gam.model_ptau, se = TRUE,
                                               apoe = "E3"))) #t=df.conv$t, RID=0)))
 df.fit_ptau <- data.frame(cbind(adjusted_new_time = ptau_plot_data$adjusted_new_time, #t = df.conv$t,
                                meas = ptau_plot_data$PTAU,
-                               # meas = df.conv$meas,
                                fit = modelFit_ptau$fit,
                                upperBound = modelFit_ptau$fit + 2 * modelFit_ptau$se.fit,
                                lowerBound = modelFit_ptau$fit - 2 * modelFit_ptau$se.fit))
@@ -236,12 +239,13 @@ inter_ptau <- na.contiguous(m2.dsig_ptau$incr)
 gam.p_ptau <- gam.p_ptau + 
   geom_line(aes(adjusted_new_time, fit), color = "black", size=1.5, data=df.fit_ptau[df.fit_ptau$adjusted_new_time>=min(inter_ptau) & df.fit_ptau$adjusted_new_time<=max(inter_ptau),]) + 
   ggplot2::geom_vline(aes(xintercept=min(inter_ptau)),linetype="dashed",color="black") + #inflection point
-  ggplot2::annotate(geom="text",label=paste0(round(min(inter_ptau),digits=1)),x=(min(inter_ptau)-1),angle='90',y=27)
+  ggplot2::annotate(geom="text",label=paste0(round(min(inter_ptau),digits=1)),x=(min(inter_ptau)-1),angle='90',y=30)
 
 #####################################################################################################
 # csf Amyloid
 #####################################################################################################
 abeta_plot_data$RID <- as.numeric(abeta_plot_data$RID)
+abeta_plot_data$PTGENDER <- as.factor(abeta_plot_data$PTGENDER)
 
 gam.model_abeta <- mgcv::gam(formula = ABETA ~ s(adjusted_new_time, bs = "cs", k = 4, fx = TRUE) +
                               s(RID, bs = "re") + 
@@ -265,12 +269,11 @@ modelFit_abeta <- data.frame(predict(gam.model_abeta, se = TRUE,
                                                apoe = "E3"))) #t=df.conv$t, RID=0)))
 df.fit_abeta <- data.frame(cbind(adjusted_new_time = abeta_plot_data$adjusted_new_time, #t = df.conv$t,
                                 meas = abeta_plot_data$ABETA,
-                                # meas = df.conv$meas,
                                 fit = modelFit_abeta$fit,
                                 upperBound = modelFit_abeta$fit + 2 * modelFit_abeta$se.fit,
                                 lowerBound = modelFit_abeta$fit - 2 * modelFit_abeta$se.fit))
 df.fit_abeta <- df.fit_abeta[!is.na(df.fit_abeta$meas),]
-meas_fn_abeta <- "CSF Aβ42 "
+meas_fn_abeta <- "CSF Aβ42"
 
 gam.p_abeta <- ggplot(data=df.fit_abeta, aes(adjusted_new_time,meas)) + ylim(c(min(df.fit_abeta$lowerBound),max(df.fit_abeta$upperBound))) +
   geom_line(aes(adjusted_new_time, fit), color = "black", size=0.25, data=df.fit_abeta) +
@@ -286,21 +289,20 @@ inter_abeta <- na.contiguous(m2.dsig_abeta$decr)
 gam.p_abeta <- gam.p_abeta + 
   geom_line(aes(adjusted_new_time, fit), color = "black", size=1.5, data=df.fit_abeta[df.fit_abeta$adjusted_new_time>=min(inter_abeta) & df.fit_abeta$adjusted_new_time<=max(inter_abeta),]) + 
   ggplot2::geom_vline(aes(xintercept=min(inter_abeta)),linetype="dashed",color="black") + #inflection point
-  ggplot2::annotate(geom="text",label=paste0(round(min(inter_abeta),digits=1)),x=(min(inter_abeta)-1),angle='90',y=1300)
+  ggplot2::annotate(geom="text",label=paste0(round(min(inter_abeta),digits=1)),x=(min(inter_abeta)-1),angle='90',y=1080)
 
 #####################################################################################################
 # meta-roi
 #####################################################################################################
 meta_roi_plot_data$RID <- as.numeric(meta_roi_plot_data$RID)
-# meta_roi_plot_data <- meta_roi_plot_data %>%
-#   dplyr::filter(!RID == "1427")
+meta_roi_plot_data$PTGENDER <- as.factor(meta_roi_plot_data$PTGENDER)
 
 gam.model_meta_roi <- mgcv::gam(formula = meta_ROI ~ s(adjusted_new_time, bs = "cs", k = 4, fx = TRUE) +
-                               s(RID, bs = "re") + 
-                               age + PTEDUCAT + apoe + PTGENDER,
-                             data = meta_roi_plot_data,
-                             family = gaussian,
-                             method = "ML")
+                                s(RID, bs = "re") + 
+                                PTEDUCAT + apoe + PTGENDER, #no need for age since age-adjusted
+                                data = meta_roi_plot_data,
+                                family = gaussian,
+                                method = "ML")
 
 m2.d_meta_roi <- Deriv(gam.model_meta_roi, newdata = test) #Calculating derivatives of the model
 
@@ -317,7 +319,6 @@ modelFit_meta_roi <- data.frame(predict(gam.model_meta_roi, se = TRUE,
                                                 apoe = "E3"))) #t=df.conv$t, RID=0)))
 df.fit_meta_roi <- data.frame(cbind(adjusted_new_time = meta_roi_plot_data$adjusted_new_time, #t = df.conv$t,
                                  meas = meta_roi_plot_data$meta_ROI,
-                                 # meas = df.conv$meas,
                                  fit = modelFit_meta_roi$fit,
                                  upperBound = modelFit_meta_roi$fit + 2 * modelFit_meta_roi$se.fit,
                                  lowerBound = modelFit_meta_roi$fit - 2 * modelFit_meta_roi$se.fit))
@@ -334,20 +335,21 @@ gam.p_meta_roi <- ggplot(data=df.fit_meta_roi, aes(adjusted_new_time,meas)) + yl
   theme(legend.position="none") +
   xlab("Years from Aβ+") + ylab(meas_fn_meta_roi)
 
-inter_meta_roi <- na.contiguous(m2.dsig_meta_roi$decr) #no significance
-# gam.p_meta_roi <- gam.p_meta_roi + 
-#   geom_line(aes(adjusted_new_time, fit), color = "black", size=1.5, data=df.fit_meta_roi[df.fit_meta_roi$adjusted_new_time>=min(inter_meta_roi) & df.fit_meta_roi$adjusted_new_time<=max(inter_meta_roi),]) + 
-#   ggplot2::geom_vline(aes(xintercept=min(inter_meta_roi)),linetype="dashed",color="black") + #inflection point
-#   ggplot2::annotate(geom="text",label=paste0(round(min(inter_meta_roi),digits=1)),x=(min(inter_meta_roi)-1),angle='90',y=10)
+inter_meta_roi <- na.contiguous(m2.dsig_meta_roi$decr)
+gam.p_meta_roi <- gam.p_meta_roi + 
+  geom_line(aes(adjusted_new_time, fit), color = "black", size=1.5, data=df.fit_meta_roi[df.fit_meta_roi$adjusted_new_time>=min(inter_meta_roi) & df.fit_meta_roi$adjusted_new_time<=max(inter_meta_roi),]) + 
+  ggplot2::geom_vline(aes(xintercept=min(inter_meta_roi)),linetype="dashed",color="black") + #inflection point
+  ggplot2::annotate(geom="text",label=paste(sprintf("%.1f", round(min(inter_meta_roi)))),x=(min(inter_meta_roi)-1),angle='90',y=2.88)
 
 #####################################################################################################
 # hippocampal volume
 #####################################################################################################
 hippocampal_volume_plot_data$RID <- as.numeric(hippocampal_volume_plot_data$RID)
+hippocampal_volume_plot_data$PTGENDER <- as.factor(hippocampal_volume_plot_data$PTGENDER)
 
 gam.model_hippocampal_volume <- mgcv::gam(formula = hippocampal_volume ~ s(adjusted_new_time, bs = "cs", k = 4, fx = TRUE) +
-                                  s(RID, bs = "re") + 
-                                  age + PTEDUCAT + apoe + PTGENDER,
+                                          s(RID, bs = "re") + 
+                                          PTEDUCAT + apoe + PTGENDER, #no need for age since age-adjusted
                                 data = hippocampal_volume_plot_data,
                                 family = gaussian,
                                 method = "ML")
@@ -367,7 +369,6 @@ modelFit_hippocampal_volume <- data.frame(predict(gam.model_hippocampal_volume, 
                                                    apoe = "E3"))) #t=df.conv$t, RID=0)))
 df.fit_hippocampal_volume <- data.frame(cbind(adjusted_new_time = hippocampal_volume_plot_data$adjusted_new_time, #t = df.conv$t,
                                     meas = hippocampal_volume_plot_data$hippocampal_volume,
-                                    # meas = df.conv$meas,
                                     fit = modelFit_hippocampal_volume$fit,
                                     upperBound = modelFit_hippocampal_volume$fit + 2 * modelFit_hippocampal_volume$se.fit,
                                     lowerBound = modelFit_hippocampal_volume$fit - 2 * modelFit_hippocampal_volume$se.fit))
@@ -388,19 +389,20 @@ inter_hippocampal_volume <- na.contiguous(m2.dsig_hippocampal_volume$decr)
 gam.p_hippocampal_volume <- gam.p_hippocampal_volume + 
   geom_line(aes(adjusted_new_time, fit), color = "black", size=1.5, data=df.fit_hippocampal_volume[df.fit_hippocampal_volume$adjusted_new_time>=min(inter_hippocampal_volume) & df.fit_hippocampal_volume$adjusted_new_time<=max(inter_hippocampal_volume),]) + 
   ggplot2::geom_vline(aes(xintercept=min(inter_hippocampal_volume)),linetype="dashed",color="black") + #inflection point
-  ggplot2::annotate(geom="text",label=paste0(round(min(inter_hippocampal_volume),digits=1)),x=(min(inter_hippocampal_volume)-1),angle='90',y=2200)
+  ggplot2::annotate(geom="text",label=paste0(round(min(inter_hippocampal_volume),digits=1)),x=(min(inter_hippocampal_volume)-1),angle='90',y=3400)
 
 #####################################################################################################
 # Ecog - Subject
 #####################################################################################################
 ecog_s_plot_data$RID <- as.numeric(ecog_s_plot_data$RID)
+ecog_s_plot_data$PTGENDER <- as.factor(ecog_s_plot_data$PTGENDER)
 
 gam.model_ecog_s <- mgcv::gam(formula = EcogGlobal ~ s(adjusted_new_time, bs = "cs", k = 4, fx = TRUE) +
-                                            s(RID, bs = "re") + 
-                                            age + PTEDUCAT + apoe + PTGENDER + CDGLOBAL,
-                                          data = ecog_s_plot_data,
-                                          family = gaussian,
-                                          method = "ML")
+                              s(RID, bs = "re") + 
+                              age + PTEDUCAT + apoe + PTGENDER + CDGLOBAL,
+                    data = ecog_s_plot_data,
+                    family = gaussian,
+                    method = "ML")
 
 m2.d_ecog_s <- Deriv(gam.model_ecog_s, newdata = test) #Calculating derivatives of the model
 
@@ -417,7 +419,6 @@ modelFit_ecog_s <- data.frame(predict(gam.model_ecog_s, se = TRUE,
                                                              apoe = "E3"))) #t=df.conv$t, RID=0)))
 df.fit_ecog_s <- data.frame(cbind(adjusted_new_time = ecog_s_plot_data$adjusted_new_time, #t = df.conv$t,
                                               meas = ecog_s_plot_data$EcogGlobal,
-                                              # meas = df.conv$meas,
                                               fit = modelFit_ecog_s$fit,
                                               upperBound = modelFit_ecog_s$fit + 2 * modelFit_ecog_s$se.fit,
                                               lowerBound = modelFit_ecog_s$fit - 2 * modelFit_ecog_s$se.fit))
@@ -440,11 +441,11 @@ gam.p_ecog_s <- gam.p_ecog_s +
   ggplot2::geom_vline(aes(xintercept=min(inter_ecog_s)),linetype="dashed",color="black") + #inflection point
   ggplot2::annotate(geom="text",label=paste0(round(min(inter_ecog_s),digits=1)),x=(min(inter_ecog_s)-1),angle='90',y=1.35)
 
-
 #####################################################################################################
 # Ecog - Study Partner
 #####################################################################################################
 ecog_p_plot_data$RID <- as.numeric(ecog_p_plot_data$RID)
+ecog_p_plot_data$PTGENDER <- as.factor(ecog_p_plot_data$PTGENDER)
 
 gam.model_ecog_p <- mgcv::gam(formula = EcogGlobal ~ s(adjusted_new_time, bs = "cs", k = 4, fx = TRUE) +
                                 s(RID, bs = "re") + 
@@ -468,7 +469,6 @@ modelFit_ecog_p <- data.frame(predict(gam.model_ecog_p, se = TRUE,
                                                  apoe = "E3"))) #t=df.conv$t, RID=0)))
 df.fit_ecog_p <- data.frame(cbind(adjusted_new_time = ecog_p_plot_data$adjusted_new_time, #t = df.conv$t,
                                   meas = ecog_p_plot_data$EcogGlobal,
-                                  # meas = df.conv$meas,
                                   fit = modelFit_ecog_p$fit,
                                   upperBound = modelFit_ecog_p$fit + 2 * modelFit_ecog_p$se.fit,
                                   lowerBound = modelFit_ecog_p$fit - 2 * modelFit_ecog_p$se.fit))
@@ -489,12 +489,13 @@ inter_ecog_p <- na.contiguous(m2.dsig_ecog_p$incr)
 gam.p_ecog_p <- gam.p_ecog_p + 
   geom_line(aes(adjusted_new_time, fit), color = "black", size=1.5, data=df.fit_ecog_p[df.fit_ecog_p$adjusted_new_time>=min(inter_ecog_p) & df.fit_ecog_p$adjusted_new_time<=max(inter_ecog_p),]) + 
   ggplot2::geom_vline(aes(xintercept=min(inter_ecog_p)),linetype="dashed",color="black") + #inflection point
-  ggplot2::annotate(geom="text",label=paste0(round(min(inter_ecog_p),digits=1)),x=(min(inter_ecog_p)-1),angle='90',y=1.1)
+  ggplot2::annotate(geom="text",label=paste0(round(min(inter_ecog_p),digits=1)),x=(min(inter_ecog_p)-1),angle='90',y=1.12)
 
 #####################################################################################################
 # ADAS13
 #####################################################################################################
 adas13_plot_data$RID <- as.numeric(adas13_plot_data$RID)
+adas13_plot_data$PTGENDER <- as.factor(adas13_plot_data$PTGENDER)
 
 gam.model_adas13 <- mgcv::gam(formula = ADAS13 ~ s(adjusted_new_time, bs = "cs", k = 4, fx = TRUE) +
                                 s(RID, bs = "re") + 
@@ -518,12 +519,11 @@ modelFit_adas13 <- data.frame(predict(gam.model_adas13, se = TRUE,
                                                  apoe = "E3"))) #t=df.conv$t, RID=0)))
 df.fit_adas13 <- data.frame(cbind(adjusted_new_time = adas13_plot_data$adjusted_new_time, #t = df.conv$t,
                                   meas = adas13_plot_data$ADAS13,
-                                  # meas = df.conv$meas,
                                   fit = modelFit_adas13$fit,
                                   upperBound = modelFit_adas13$fit + 2 * modelFit_adas13$se.fit,
                                   lowerBound = modelFit_adas13$fit - 2 * modelFit_adas13$se.fit))
 df.fit_adas13 <- df.fit_adas13[!is.na(df.fit_adas13$meas),]
-meas_fn_adas13 <- "ADAS13"
+meas_fn_adas13 <- "ADAS-Cog13"
 
 gam.p_adas13 <- ggplot(data=df.fit_adas13, aes(adjusted_new_time,meas)) + ylim(c(min(df.fit_adas13$lowerBound),max(df.fit_adas13$upperBound))) +
   geom_line(aes(adjusted_new_time, fit), color = "black", size=0.25, data=df.fit_adas13) +
@@ -539,12 +539,13 @@ inter_adas13 <- na.contiguous(m2.dsig_adas13$incr)
 gam.p_adas13 <- gam.p_adas13 + 
   geom_line(aes(adjusted_new_time, fit), color = "black", size=1.5, data=df.fit_adas13[df.fit_adas13$adjusted_new_time>=min(inter_adas13) & df.fit_adas13$adjusted_new_time<=max(inter_adas13),]) + 
   ggplot2::geom_vline(aes(xintercept=min(inter_adas13)),linetype="dashed",color="black") + #inflection point
-  ggplot2::annotate(geom="text",label=paste0(round(min(inter_adas13),digits=1)),x=(min(inter_adas13)-1),angle='90',y=10)
+  ggplot2::annotate(geom="text",label=paste(sprintf("%.1f", round(min(inter_adas13)))), x=(min(inter_adas13)-1),angle='90',y=9.8)
 
 #####################################################################################################
 # MMSE
 #####################################################################################################
 mmse_plot_data$RID <- as.numeric(mmse_plot_data$RID)
+mmse_plot_data$PTGENDER <- as.factor(mmse_plot_data$PTGENDER)
 
 gam.model_mmse <- mgcv::gam(formula = MMSE ~ s(adjusted_new_time, bs = "cs", k = 4, fx = TRUE) +
                                 s(RID, bs = "re") + 
@@ -568,7 +569,6 @@ modelFit_mmse <- data.frame(predict(gam.model_mmse, se = TRUE,
                                                  apoe = "E3"))) #t=df.conv$t, RID=0)))
 df.fit_mmse <- data.frame(cbind(adjusted_new_time = mmse_plot_data$adjusted_new_time, #t = df.conv$t,
                                   meas = mmse_plot_data$MMSE,
-                                  # meas = df.conv$meas,
                                   fit = modelFit_mmse$fit,
                                   upperBound = modelFit_mmse$fit + 2 * modelFit_mmse$se.fit,
                                   lowerBound = modelFit_mmse$fit - 2 * modelFit_mmse$se.fit))
@@ -590,12 +590,13 @@ inter_mmse <- na.contiguous(m2.dsig_mmse$decr)
 gam.p_mmse <- gam.p_mmse + 
   geom_line(aes(adjusted_new_time, fit), color = "black", size=1.5, data=df.fit_mmse[df.fit_mmse$adjusted_new_time>=min(inter_mmse) & df.fit_mmse$adjusted_new_time<=max(inter_mmse),]) + 
   ggplot2::geom_vline(aes(xintercept=min(inter_mmse)),linetype="dashed",color="black") + #inflection point
-  ggplot2::annotate(geom="text",label=paste0(round(min(inter_mmse),digits=1)),x=(min(inter_mmse)-1),angle='90',y=27)
+  ggplot2::annotate(geom="text",label=paste0(round(min(inter_mmse),digits=1)),x=(min(inter_mmse)-1),angle='90',y=26.8)
 
 #####################################################################################################
 # mPACCtrailsB
 #####################################################################################################
 mpacctrailsb_plot_data$RID <- as.numeric(mpacctrailsb_plot_data$RID)
+mpacctrailsb_plot_data$PTGENDER <- as.factor(mpacctrailsb_plot_data$PTGENDER)
 
 gam.model_mpacctrailsb <- mgcv::gam(formula = mPACCtrailsB ~ s(adjusted_new_time, bs = "cs", k = 4, fx = TRUE) +
                               s(RID, bs = "re") + 
@@ -619,12 +620,11 @@ modelFit_mpacctrailsb <- data.frame(predict(gam.model_mpacctrailsb, se = TRUE,
                                                apoe = "E3"))) #t=df.conv$t, RID=0)))
 df.fit_mpacctrailsb <- data.frame(cbind(adjusted_new_time = mpacctrailsb_plot_data$adjusted_new_time, #t = df.conv$t,
                                 meas = mpacctrailsb_plot_data$mPACCtrailsB,
-                                # meas = df.conv$meas,
                                 fit = modelFit_mpacctrailsb$fit,
                                 upperBound = modelFit_mpacctrailsb$fit + 2 * modelFit_mpacctrailsb$se.fit,
                                 lowerBound = modelFit_mpacctrailsb$fit - 2 * modelFit_mpacctrailsb$se.fit))
 df.fit_mpacctrailsb <- df.fit_mpacctrailsb[!is.na(df.fit_mpacctrailsb$meas),]
-meas_fn_mpacctrailsb <- "mPACCtrailsB"
+meas_fn_mpacctrailsb <- "PACC"
 
 gam.p_mpacctrailsb <- ggplot(data=df.fit_mpacctrailsb, aes(adjusted_new_time,meas)) + ylim(c(min(df.fit_mpacctrailsb$lowerBound),max(df.fit_mpacctrailsb$upperBound))) +
   geom_line(aes(adjusted_new_time, fit), color = "black", size=0.25, data=df.fit_mpacctrailsb) +
@@ -641,7 +641,6 @@ gam.p_mpacctrailsb <- gam.p_mpacctrailsb +
   geom_line(aes(adjusted_new_time, fit), color = "black", size=1.5, data=df.fit_mpacctrailsb[df.fit_mpacctrailsb$adjusted_new_time>=min(inter_mpacctrailsb) & df.fit_mpacctrailsb$adjusted_new_time<=max(inter_mpacctrailsb),]) + 
   ggplot2::geom_vline(aes(xintercept=min(inter_mpacctrailsb)),linetype="dashed",color="black") + #inflection point
   ggplot2::annotate(geom="text",label=paste0(round(min(inter_mpacctrailsb),digits=1)),x=(min(inter_mpacctrailsb)-1),angle='90',y=-.3)
-
 
 #####################################################################################################
 # CDRSB
@@ -670,7 +669,6 @@ modelFit_cdrsb <- data.frame(predict(gam.model_cdrsb, se = TRUE,
                                                        CDGLOBAL = 0))) #t=df.conv$t, RID=0)))
 df.fit_cdrsb <- data.frame(cbind(adjusted_new_time = cdrsb_plot_data$adjusted_new_time, #t = df.conv$t,
                                         meas = cdrsb_plot_data$CDRSB,
-                                        # meas = df.conv$meas,
                                         fit = modelFit_cdrsb$fit,
                                         upperBound = modelFit_cdrsb$fit + 2 * modelFit_cdrsb$se.fit,
                                         lowerBound = modelFit_cdrsb$fit - 2 * modelFit_cdrsb$se.fit))
@@ -691,17 +689,23 @@ inter_cdrsb <- na.contiguous(m2.dsig_cdrsb$incr)
 gam.p_cdrsb <- gam.p_cdrsb + 
   geom_line(aes(adjusted_new_time, fit), color = "black", size=1.5, data=df.fit_cdrsb[df.fit_cdrsb$adjusted_new_time>=min(inter_cdrsb) & df.fit_cdrsb$adjusted_new_time<=max(inter_cdrsb),]) + 
   ggplot2::geom_vline(aes(xintercept=min(inter_cdrsb)),linetype="dashed",color="black") + #inflection point
-  ggplot2::annotate(geom="text",label=paste0(round(min(inter_cdrsb),digits=1)),x=(min(inter_cdrsb)-1),angle='90',y= 0.4)
+  ggplot2::annotate(geom="text",label=paste0(round(min(inter_cdrsb),digits=1)),x=(min(inter_cdrsb)-1),angle='90',y= 0.7)
 
 #####################################################################################################
 ############################################# Plotting ##############################################
 #####################################################################################################
-# physical biomarkers
 csf_centiloid <- gam.p_centiloid + gam.p_abeta + gam.p_ptau + gam.p_tau + plot_layout(nrow = 2)
 
 scans <- gam.p_hippocampal_volume + gam.p_meta_roi + gam.p_fdg + plot_layout(nrow = 1)
 
-(csf_centiloid) / (scans) + plot_layout(heights = c(2, 1)) + plot_annotation(tag_levels = 'a') &  theme(plot.tag = element_text(face = 'bold'))
+fig1 <- (csf_centiloid) / (scans) + plot_layout(heights = c(2, 1)) + plot_annotation(tag_levels = 'A') &  theme(plot.tag = element_text(face = 'bold')) # physical biomarkers
 
-# cognitive assessments
-gam.p_cdrsb + gam.p_adas13 + gam.p_mmse + gam.p_mpacctrailsb + gam.p_ecog_p + gam.p_ecog_s + plot_layout(nrow = 2) + plot_annotation(tag_levels = 'a') &  theme(plot.tag = element_text(face = 'bold'))
+fig2 <- gam.p_cdrsb + gam.p_adas13 + gam.p_mmse + gam.p_mpacctrailsb + gam.p_ecog_p + gam.p_ecog_s + plot_layout(nrow = 2) + plot_annotation(tag_levels = 'A') &  theme(plot.tag = element_text(face = 'bold')) #cognitive biomarkers
+
+ragg::agg_tiff("C:\\Work Folder\\paper data longitudinal phases\\new plots\\physical_biomarkers.jpg", width = 9, height = 8, units = "in", res = 300)
+fig1
+dev.off()
+
+ragg::agg_tiff("C:\\Work Folder\\paper data longitudinal phases\\new plots\\cognitive_biomarkers.jpg", width = 9, height = 5, units = "in", res = 300)
+fig2
+dev.off()
