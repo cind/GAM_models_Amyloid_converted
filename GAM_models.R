@@ -702,10 +702,10 @@ fig1 <- (csf_centiloid) / (scans) + plot_layout(heights = c(2, 1)) + plot_annota
 
 fig2 <- gam.p_cdrsb + gam.p_adas13 + gam.p_mmse + gam.p_mpacctrailsb + gam.p_ecog_p + gam.p_ecog_s + plot_layout(nrow = 2) + plot_annotation(tag_levels = 'A') &  theme(plot.tag = element_text(face = 'bold')) #cognitive biomarkers
 
-ragg::agg_tiff("C:\\Work Folder\\paper data longitudinal phases\\new plots\\physical_biomarkers.jpg", width = 9, height = 8, units = "in", res = 300)
+ragg::agg_tiff("~/plots/physical_biomarkers.jpg", width = 9, height = 8, units = "in", res = 300)
 fig1
 dev.off()
 
-ragg::agg_tiff("C:\\Work Folder\\paper data longitudinal phases\\new plots\\cognitive_biomarkers.jpg", width = 9, height = 5, units = "in", res = 300)
+ragg::agg_tiff("~/plots/cognitive_biomarkers.jpg", width = 9, height = 5, units = "in", res = 300)
 fig2
 dev.off()
