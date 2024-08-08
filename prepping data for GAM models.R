@@ -10,24 +10,33 @@ source("~/Projects/ComGamPackage/ComGamHarmFunction.R")
 #####################################################################################
 #getting the participant ID's that have changed from amyloid negative to amyloid positive
 #####################################################################################
-amyloid_pet <- readr::read_delim("~/Data/UCBERKELEY_AMY_6MM_30Sep2023.csv") [,1:14]
+amyloid_pet <- readr::read_delim("~/Data/UCBERKELEY_AMY_6MM_31Jul2024.csv") [,1:16]
 amyloid_pet <- amyloid_pet %>% dplyr::rename(suvr_summary=SUMMARY_SUVR,
                                              Centiloid=CENTILOIDS,
                                              AmyloidPosPET=AMYLOID_STATUS,
                                              EXAMDATE_pet = SCANDATE) %>%
   dplyr::mutate(EXAMDATE_pet = as.Date(EXAMDATE_pet),
-                RID = as.character(RID)) %>%
-  dplyr::select(RID, EXAMDATE_pet, AmyloidPosPET, Centiloid, suvr_summary)
+                RID = as.character(RID),
+                AmyloidPosPET_Centiloid = case_when(Centiloid >= 20 ~ 1, #creating a variable using Centiloid = 20 as the threshold for AB positivity
+                                                    TRUE ~ 0)) %>%
+  dplyr::select(RID, EXAMDATE_pet, AmyloidPosPET, AmyloidPosPET_Centiloid, Centiloid, suvr_summary)
 
-change_in_amyloid <- amyloid_pet %>%
+#filtering to participants with more than one observation
+amyloid_longitudinal <- amyloid_pet %>%
   dplyr::group_by(RID) %>%
-  dplyr::filter(all(c(0, 1) %in% AmyloidPosPET)) %>%
+  dplyr::filter(n()>1) %>%
+  dplyr::ungroup()
+
+#filtering to participants who have both amyloid negative and amyloid positive status
+change_in_amyloid <- amyloid_longitudinal %>%
+  dplyr::group_by(RID) %>%
+  dplyr::filter(all(c(0, 1) %in% AmyloidPosPET_Centiloid)) %>%
   dplyr::distinct()
 
 #getting important dates for all ids
 last_a_negative_date_pet <- amyloid_pet %>%
   dplyr::group_by(RID) %>%
-  dplyr::filter(AmyloidPosPET == 0) %>%
+  dplyr::filter(AmyloidPosPET_Centiloid == 0) %>%
   dplyr::mutate(last_a_neg_date_pet = max(EXAMDATE_pet),
                 AmyNeg_Centiloid = Centiloid) %>%
   dplyr::select(RID, Centiloid, EXAMDATE_pet, last_a_neg_date_pet) %>%
@@ -41,7 +50,7 @@ last_a_negative_date_pet <- last_a_negative_date_pet %>%
 #PET - getting first A+ dates by RID
 first_a_positive_date_pet <- amyloid_pet %>%
   dplyr::group_by(RID) %>%
-  dplyr::filter(AmyloidPosPET == 1) %>%
+  dplyr::filter(AmyloidPosPET_Centiloid == 1) %>%
   dplyr::mutate(first_a_pos_date_pet = min(EXAMDATE_pet)) %>%
   dplyr::select(RID, Centiloid, EXAMDATE_pet, first_a_pos_date_pet) %>%
   dplyr::ungroup() %>%
@@ -79,7 +88,7 @@ wonky_RIDs <- centiloid_plot_data %>%
   filter(adjusted_new_time < 0 & Centiloid > 20)
 
 centiloid_plot_data <- centiloid_plot_data %>%
-  dplyr::filter(!(RID %in% unique(wonky_RIDs$RID) | RID == "1261" | RID == "6234" | RID == "6454")) #6454 is amyloid positive based on SUVR, not centiloid. the others shift from positive to negative
+  dplyr::filter(!(RID %in% unique(wonky_RIDs$RID) | RID == "1261" | RID == "6234" | RID == "6454")) # these RID's shift from positive to negative
 
 #############################################################################
 # getting CDGLOBAL, APOE, education, and birth year into a dataset
@@ -177,7 +186,7 @@ centiloid_plot_data <- merge(diagnoses, centiloid_plot_data, all = TRUE) %>%
   dplyr::ungroup()
 
 centiloid_plot_data <- centiloid_plot_data %>%
-  dplyr::select(RID, diags, Centiloid, PTGENDER, PTEDUCAT, apoe, age, adjusted_new_time)
+  dplyr::select(RID, EXAMDATE_pet, diags, Centiloid, PTGENDER, PTEDUCAT, apoe, age, adjusted_new_time)
 
 write.csv(centiloid_plot_data, "~/Projects/GAM_models_Amyloid_converted/gam_modelling_data/centiloid_lcmm_data.csv")
 
@@ -219,7 +228,7 @@ fdg_plot_data <- merge(diagnoses, fdg_plot_data, all = TRUE) %>%
   dplyr::ungroup()
 
 fdg_plot_data <- fdg_plot_data %>%
-  dplyr::select(RID, diags, adjusted_Meta_ROI, PTGENDER, PTEDUCAT, apoe, age, adjusted_new_time)
+  dplyr::select(RID, EXAMDATE, diags, adjusted_Meta_ROI, PTGENDER, PTEDUCAT, apoe, age, adjusted_new_time)
 
 write.csv(fdg_plot_data, "~/Projects/GAM_models_Amyloid_converted/gam_modelling_data/fdg_gam_data.csv")
 
@@ -510,7 +519,7 @@ meta_roi_plot_data <- meta_roi_plot_data %>%
   dplyr::filter(row_number() == 1) %>%
   dplyr::ungroup()
 meta_roi_plot_data <- meta_roi_plot_data %>%
-  dplyr::select(RID, diags, meta_ROI, PTGENDER, PTEDUCAT, apoe, age, adjusted_new_time)
+  dplyr::select(RID, EXAMDATE, diags, meta_ROI, PTGENDER, PTEDUCAT, apoe, age, adjusted_new_time)
 
 write.csv(meta_roi_plot_data, "~/Projects/GAM_models_Amyloid_converted/gam_modelling_data/meta_roi_gam_data_no_adni1.csv")
 
@@ -521,10 +530,8 @@ hippocampal_volume_plot_data <- hippocampal_volume_plot_data %>%
   dplyr::group_by(RID, EXAMDATE) %>%
   dplyr::filter(row_number() == 1) %>%
   dplyr::ungroup()
-# hippocampal_volume_plot_data <- hippocampal_volume_plot_data %>%
-#   dplyr::mutate(hippocampal_volume = scale(hippocampal_volume))
 hippocampal_volume_plot_data <- hippocampal_volume_plot_data %>%
-  dplyr::select(RID, diags, hippocampal_volume, PTGENDER, PTEDUCAT, apoe, age, adjusted_new_time)
+  dplyr::select(RID, EXAMDATE, diags, hippocampal_volume, PTGENDER, PTEDUCAT, apoe, age, adjusted_new_time)
 
 write.csv(hippocampal_volume_plot_data, "~/Projects/GAM_models_Amyloid_converted/gam_modelling_data/hippocampal_volume_gam_data_no_adni1.csv")
 
@@ -532,16 +539,16 @@ write.csv(hippocampal_volume_plot_data, "~/Projects/GAM_models_Amyloid_converted
 # ADAS13
 #####################################################################################
 
-#Using Processing Pipeline from CIND
+# Using Processing Pipeline from CIND
 adas_1_score <- readr::read_delim("~/Data/ADASSCORES_23Jul2024.csv") %>% # edit to file name and directory for ADAS Scores, ADNI 1
   dplyr::rename(VISCODE2 = VISCODE)
 adas_2_3_go <- readr::read_delim("~/Data/ADAS_ADNIGO23_23Jul2024.csv") %>% # edit to file name and directory for ADAS Scores, ADNI GO/2/3
   dplyr::mutate(ADAS13=TOTAL13,EXAMDATE=VISDATE)
 
-## recodes missing data for total ADAS scores in ADNI1
+# recodes missing data for total ADAS scores in ADNI1
 adas_1_score$ADAS13 <- ifelse(adas_1_score$TOTALMOD==-4,NA,adas_1_score$TOTALMOD)
 
-## joins two ADAS tables
+# joins two ADAS tables
 adas_scores <- dplyr::bind_rows(adas_2_3_go,adas_1_score) %>%
   dplyr::select(RID,VISCODE2,EXAMDATE,ADAS13) %>%
   dplyr::group_by(RID,VISCODE2) %>%
@@ -557,7 +564,7 @@ adas13_plot_data <- adas13_plot_data %>%
   dplyr::left_join(lm_data) %>%
   dplyr::mutate(adjusted_new_time = lubridate::time_length(difftime(EXAMDATE, predicted_date), "years"))
 
-#getting demographics
+# getting demographics
 adas13_plot_data <- as.data.frame(adas13_plot_data) %>%
   dplyr::left_join(dem, by = "RID") %>%
   dplyr::mutate(age = lubridate::time_length(difftime(EXAMDATE, birthdate), "years"))
@@ -584,7 +591,7 @@ adas13_plot_data <- adas13_plot_data %>%
   dplyr::ungroup()
 
 adas13_plot_data <- adas13_plot_data %>%
-  dplyr::select(RID, CDGLOBAL, diags, ADAS13, PTGENDER, PTEDUCAT, apoe, age, adjusted_new_time)
+  dplyr::select(RID, EXAMDATE, CDGLOBAL, diags, ADAS13, PTGENDER, PTEDUCAT, apoe, age, adjusted_new_time)
 
 write.csv(adas13_plot_data, "~/Projects/GAM_models_Amyloid_converted/gam_modelling_data/adas13_gam_data.csv")
 
@@ -615,7 +622,7 @@ mmse_plot_data <- mmse_plot_data %>%
   dplyr::filter(row_number() == 1) %>%
   dplyr::ungroup()
 
-#getting demographics
+# getting demographics
 mmse_plot_data <- as.data.frame(mmse_plot_data) %>%
   dplyr::left_join(dem, by = "RID") %>%
   dplyr::mutate(age = lubridate::time_length(difftime(EXAMDATE, birthdate), "years"))
@@ -634,7 +641,7 @@ mmse_plot_data <- merge(cdglobal_data, mmse_plot_data, all = TRUE) %>%
   dplyr::distinct()
 
 mmse_plot_data <- mmse_plot_data %>%
-  dplyr::select(RID, CDGLOBAL, diags, MMSE, PTGENDER, PTEDUCAT, apoe, age, adjusted_new_time)
+  dplyr::select(RID, EXAMDATE, CDGLOBAL, diags, MMSE, PTGENDER, PTEDUCAT, apoe, age, adjusted_new_time)
 
 write.csv(mmse_plot_data, "~/Projects/GAM_models_Amyloid_converted/gam_modelling_data/mmse_gam_data.csv")
 
@@ -647,13 +654,13 @@ cdrsb_plot_data <- cdrsb_plot_data[cdrsb_plot_data$CDGLOBAL>=0,]
 cdrsb_plot_data$CDRSB <- rowSums(cdrsb_plot_data[,c('CDMEMORY','CDORIENT','CDJUDGE','CDCOMMUN','CDHOME','CDCARE')])
 cdrsb_plot_data$RID <- as.character(cdrsb_plot_data$RID)
 
-#getting lm_data in
+# getting lm_data in
 cdrsb_plot_data <- cdrsb_plot_data %>%
   dplyr::filter(RID %in% unique(centiloid_plot_data$RID)) %>%
   dplyr::left_join(lm_data) %>%
   dplyr::mutate(adjusted_new_time = lubridate::time_length(difftime(CDR.DATE, predicted_date), "years"))
 
-#getting demographics
+# getting demographics
 cdrsb_plot_data <- as.data.frame(cdrsb_plot_data) %>%
   dplyr::left_join(dem, by = "RID") %>%
   dplyr::mutate(age = lubridate::time_length(difftime(CDR.DATE, birthdate), "years"))
@@ -671,7 +678,7 @@ cdrsb_plot_data <- cdrsb_plot_data %>%
   dplyr::filter(!is.na(CDRSB))
 
 cdrsb_plot_data <- cdrsb_plot_data %>%
-  dplyr::select(RID, CDGLOBAL, diags, CDRSB, PTGENDER, PTEDUCAT, apoe, age, adjusted_new_time)
+  dplyr::select(RID, CDR.DATE, CDGLOBAL, diags, CDRSB, PTGENDER, PTEDUCAT, apoe, age, adjusted_new_time)
 
 write.csv(cdrsb_plot_data, "~/Projects/GAM_models_Amyloid_converted/gam_modelling_data/cdrsb_gam_data.csv")
 
@@ -719,7 +726,7 @@ debugged_pacc_fn<-function (dd, keepComponents = FALSE)
     dplyr::distinct_at(vars(RID,VISCODE,mPACCdigit,mPACCtrailsB))
 }
 
-## LDEL and DIGITSCOR/TRABSCOR are recorded at separate baseline/screening visits - below code aligns to one visit
+# LDEL and DIGITSCOR/TRABSCOR are recorded at separate baseline/screening visits - below code aligns to one visit
 neurobat_non_bl <- neurobat_source %>%
   dplyr::filter(!(VISCODE2 %in% c("bl","sc","f"))) %>%
   dplyr::select(RID,VISCODE2,LDELTOTAL,DIGITSCOR,TRABSCOR)
@@ -736,13 +743,13 @@ neurobat_scores_bl <- neurobat_source %>%
   dplyr::mutate(VISCODE2="bl") %>%
   dplyr::arrange(RID)
 
-## selects correct merged rows
+# selects correct merged rows
 neurobat_bl <- dplyr::full_join(neurobat_ldel_bl,neurobat_scores_bl,by=c("RID","VISCODE2")) %>%
   dplyr::mutate(total_na = is.na(DIGITSCOR)+is.na(TRABSCOR)+is.na(LDELTOTAL)) %>%
   dplyr::arrange(total_na) %>%
   dplyr::distinct_at(vars(RID,VISCODE2),.keep_all=TRUE)
 
-## averages records for subjects with multiple batteries evaluated
+# averages records for subjects with multiple batteries evaluated
 neurobat <- dplyr::bind_rows(neurobat_bl,neurobat_non_bl) %>%
   dplyr::group_by(RID,VISCODE2) %>%
   dplyr::mutate(across(.cols=dplyr::where(is.numeric),.fns=~mean(.,na.rm=TRUE))) %>%
@@ -789,7 +796,7 @@ pacc <- debugged_pacc_fn(dd=data.frame(pacc_df)) %>%
   dplyr::mutate(across(.cols=dplyr::where(is.numeric),.fns=~mean(.,na.rm=TRUE))) %>%
   dplyr::distinct_at(vars(RID),.keep_all=TRUE)
 
-#getting dates
+# getting dates
 registry <- read.csv("~/Data/REGISTRY_23Jul2024.csv") %>%
   dplyr::select(RID, VISCODE2, EXAMDATE)
 
@@ -801,12 +808,12 @@ mpacctrailsb_plot_data <- mpacctrailsb_plot_data %>%
                 !(is.na(mPACCtrailsB))) %>%
   dplyr::mutate(mPACCtrailsB = as.numeric(mPACCtrailsB),
                 RID = as.character(RID))
-#getting lm_data in
+# getting lm_data in
 mpacctrailsb_plot_data <- mpacctrailsb_plot_data %>%
   dplyr::left_join(lm_data) %>%
   dplyr::mutate(adjusted_new_time = lubridate::time_length(difftime(EXAMDATE, predicted_date), "years"))
 
-#getting demographics
+# getting demographics
 mpacctrailsb_plot_data <- as.data.frame(mpacctrailsb_plot_data) %>%
   dplyr::left_join(dem, by = "RID") %>%
   dplyr::mutate(age = lubridate::time_length(difftime(EXAMDATE, birthdate), "years"))
@@ -830,17 +837,16 @@ mpacctrailsb_plot_data <- mpacctrailsb_plot_data %>%
   dplyr::group_by(RID, EXAMDATE) %>%
   dplyr::filter(row_number() == 1) %>%
   dplyr::ungroup()
-# mpacctrailsb_plot_data <- mpacctrailsb_plot_data %>%
-#   dplyr::mutate(mPACCtrailsB = scale(mPACCtrailsB))
+
 mpacctrailsb_plot_data <- mpacctrailsb_plot_data %>%
-  dplyr::select(RID, CDGLOBAL, diags, mPACCtrailsB, PTGENDER, PTEDUCAT, apoe, age, adjusted_new_time)
+  dplyr::select(RID, EXAMDATE, CDGLOBAL, diags, mPACCtrailsB, PTGENDER, PTEDUCAT, apoe, age, adjusted_new_time)
 
 write.csv(mpacctrailsb_plot_data, "~/Projects/GAM_models_Amyloid_converted/gam_modelling_data/mpacctrailsb_gam_data.csv")
 
 ###########################################################################################################
 # TAU
 ###########################################################################################################
-## CSF data load-in
+# CSF data load-in
 upenn_csf_master <- readr::read_delim("~/Data/UPENNBIOMK_MASTER_FINAL.csv")
 upenn_csf_master <- upenn_csf_master %>% 
   dplyr::filter(BATCH %in% c("UPENNBIOMK9","UPENNBIOMK10",
@@ -849,7 +855,6 @@ upenn_csf_master <- upenn_csf_master %>%
   dplyr::arrange(RUNDATE) %>% 
   dplyr::distinct_at(vars(RID,VISCODE2),.keep_all=TRUE)
 
-## upenn_merged_csf_biomarkers <- dplyr::bind_rows(upenn_mk_12,upenn_mk_10,upenn_mk_9)
 upenn_merged_csf_biomarkers <- upenn_csf_master %>% 
   dplyr::mutate(ABETA=ABETA42)
 upenn_merged_csf_biomarkers <- upenn_merged_csf_biomarkers %>% 
@@ -863,14 +868,14 @@ upenn_merged_csf_biomarkers <- upenn_merged_csf_biomarkers %>%
   dplyr::arrange(RUNDATE) %>% 
   dplyr::distinct_at(vars(RID,VISCODE),.keep_all=TRUE)
 
-## split ABETA values here; values <200 or >1700 are usable for status assignment but not for numerical analysis
-## don't need to split CSF PTAU - all values are within technical limits
+# split ABETA values here; values <200 or >1700 are usable for status assignment but not for numerical analysis
+# don't need to split CSF PTAU - all values are within technical limits
 upenn_merged_csf_biomarkers <- upenn_merged_csf_biomarkers %>% 
   dplyr::mutate(ABETA_for_status=ABETA,
                 ABETA_for_biomarkers=case_when(ABETA>=200 & ABETA<=1700 ~ ABETA),
                 RID = as.character(RID),
                 VISCODE_csf = VISCODE)
-#getting lm_data in
+# getting lm_data in
 csf_plot_data <- upenn_merged_csf_biomarkers %>%
   dplyr::filter(RID %in% unique(centiloid_plot_data$RID)) %>%
   dplyr::left_join(lm_data) %>%
@@ -878,7 +883,7 @@ csf_plot_data <- upenn_merged_csf_biomarkers %>%
                 TAU = as.numeric(TAU),
                 PTAU = as.numeric(PTAU))
 
-#getting demographics
+# getting demographics
 csf_plot_data <- as.data.frame(csf_plot_data) %>%
   dplyr::left_join(dem, by = "RID") %>%
   dplyr::mutate(age = lubridate::time_length(difftime(EXAMDATE, birthdate), "years"))
@@ -907,7 +912,7 @@ tau_plot_data <- tau_plot_data %>%
   dplyr::ungroup()
 
 tau_plot_data <- tau_plot_data %>%
-  dplyr::select(RID, CDGLOBAL, diags, TAU, PTGENDER, PTEDUCAT, apoe, age, adjusted_new_time)
+  dplyr::select(RID, EXAMDATE, CDGLOBAL, diags, TAU, PTGENDER, PTEDUCAT, apoe, age, adjusted_new_time)
 
 write.csv(tau_plot_data, "~/Projects/GAM_models_Amyloid_converted/gam_modelling_data/tau_gam_data.csv")
 
@@ -922,7 +927,7 @@ ptau_plot_data <- ptau_plot_data %>%
   dplyr::ungroup()
 
 ptau_plot_data <- ptau_plot_data %>%
-  dplyr::select(RID, CDGLOBAL, diags, PTAU, PTGENDER, PTEDUCAT, apoe, age, adjusted_new_time)
+  dplyr::select(RID, EXAMDATE, CDGLOBAL, diags, PTAU, PTGENDER, PTEDUCAT, apoe, age, adjusted_new_time)
 
 write.csv(ptau_plot_data, "~/Projects/GAM_models_Amyloid_converted/gam_modelling_data/ptau_gam_data.csv")
 
@@ -937,7 +942,7 @@ abeta_plot_data <- abeta_plot_data %>%
   dplyr::ungroup()
 
 abeta_plot_data <- abeta_plot_data %>%
-  dplyr::select(RID, CDGLOBAL, diags, ABETA, PTGENDER, PTEDUCAT, apoe, age, adjusted_new_time)
+  dplyr::select(RID, EXAMDATE, CDGLOBAL, diags, ABETA, PTGENDER, PTEDUCAT, apoe, age, adjusted_new_time)
 
 write.csv(abeta_plot_data, "~/Projects/GAM_models_Amyloid_converted/gam_modelling_data/abeta_gam_data.csv")
 
@@ -946,7 +951,6 @@ write.csv(abeta_plot_data, "~/Projects/GAM_models_Amyloid_converted/gam_modellin
 ############################################################################################################
 d_s <- read.csv("~/Data/ECOGPT_08Apr2024.csv")
 d_s[d_s == "9"] <- NA
-# d_s <- d_s[, colMeans(is.na(d_s)) <= .3]
 ds_test <- d_s %>%
   dplyr::filter(!is.na(EcogPtTotal))
 ds_test <- ds_test %>%
@@ -984,14 +988,14 @@ ecog_s_plot_data <- d_s %>%
   dplyr::mutate(RID = as.character(RID),
                 EXAMDATE = as.Date(VISDATE))
 
-#getting lm_data in
+# getting lm_data in
 ecog_s_plot_data <- ecog_s_plot_data %>%
   dplyr::filter(RID %in% unique(centiloid_plot_data$RID)) %>%
   dplyr::left_join(lm_data) %>%
   dplyr::mutate(adjusted_new_time = lubridate::time_length(difftime(EXAMDATE, predicted_date), "years"),
                 EcogGlobal = as.numeric(EcogGlobal))
 
-#getting demographics
+# getting demographics
 ecog_s_plot_data <- as.data.frame(ecog_s_plot_data) %>%
   dplyr::left_join(dem, by = "RID") %>%
   dplyr::mutate(age = lubridate::time_length(difftime(EXAMDATE, birthdate), "years"))
@@ -1012,7 +1016,7 @@ ecog_s_plot_data <- merge(cdglobal_data, ecog_s_plot_data, all = TRUE) %>%
   dplyr::distinct()
 
 ecog_s_plot_data <- ecog_s_plot_data %>%
-  dplyr::select(RID, CDGLOBAL, diags, EcogGlobal, PTGENDER, PTEDUCAT, apoe, age, adjusted_new_time)
+  dplyr::select(RID, VISDATE, CDGLOBAL, diags, EcogGlobal, PTGENDER, PTEDUCAT, apoe, age, adjusted_new_time)
 
 write.csv(ecog_s_plot_data, "~/Projects/GAM_models_Amyloid_converted/gam_modelling_data/ecog_s_gam_data.csv")
 
@@ -1053,14 +1057,14 @@ ecog_p_plot_data <- d_p %>%
   dplyr::mutate(RID = as.character(RID),
                 EXAMDATE = as.Date(VISDATE))
 
-#getting lm_data in
+# getting lm_data in
 ecog_p_plot_data <- ecog_p_plot_data %>%
   dplyr::filter(RID %in% unique(centiloid_plot_data$RID)) %>%
   dplyr::left_join(lm_data) %>%
   dplyr::mutate(adjusted_new_time = lubridate::time_length(difftime(EXAMDATE, predicted_date), "years"),
                 EcogGlobal = as.numeric(EcogGlobal))
 
-#getting demographics
+# getting demographics
 ecog_p_plot_data <- as.data.frame(ecog_p_plot_data) %>%
   dplyr::left_join(dem, by = "RID") %>%
   dplyr::mutate(age = lubridate::time_length(difftime(EXAMDATE, birthdate), "years"))
@@ -1081,6 +1085,6 @@ ecog_p_plot_data <- merge(cdglobal_data, ecog_p_plot_data, all = TRUE) %>%
   dplyr::distinct()
 
 ecog_p_plot_data <- ecog_p_plot_data %>%
-  dplyr::select(RID, CDGLOBAL, diags, EcogGlobal, PTGENDER, PTEDUCAT, apoe, age, adjusted_new_time)
+  dplyr::select(RID, VISDATE, CDGLOBAL, diags, EcogGlobal, PTGENDER, PTEDUCAT, apoe, age, adjusted_new_time)
 
 write.csv(ecog_p_plot_data, "~/Projects/GAM_models_Amyloid_converted/gam_modelling_data/ecog_p_gam_data.csv")
