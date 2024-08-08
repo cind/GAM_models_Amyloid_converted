@@ -77,6 +77,8 @@ lm_data <- change_in_amyloid_filtered %>%
   dplyr::select(RID, predicted_date) %>%
   dplyr::distinct()
 
+# write.csv(lm_data, "~/Projects/GAM_models_Amyloid_converted/gam_modelling_data/lm_data.csv")
+
 #####################################################################################
 # looking at change in amyloid status
 #####################################################################################
@@ -188,7 +190,7 @@ centiloid_plot_data <- merge(diagnoses, centiloid_plot_data, all = TRUE) %>%
 centiloid_plot_data <- centiloid_plot_data %>%
   dplyr::select(RID, EXAMDATE_pet, diags, Centiloid, PTGENDER, PTEDUCAT, apoe, age, adjusted_new_time)
 
-write.csv(centiloid_plot_data, "~/Projects/GAM_models_Amyloid_converted/gam_modelling_data/centiloid_lcmm_data.csv")
+# write.csv(centiloid_plot_data, "~/Projects/GAM_models_Amyloid_converted/gam_modelling_data/centiloid_lcmm_data.csv")
 
 #####################################################################################
 # looking at change in fdg PET Meta-ROI
@@ -230,7 +232,7 @@ fdg_plot_data <- merge(diagnoses, fdg_plot_data, all = TRUE) %>%
 fdg_plot_data <- fdg_plot_data %>%
   dplyr::select(RID, EXAMDATE, diags, adjusted_Meta_ROI, PTGENDER, PTEDUCAT, apoe, age, adjusted_new_time)
 
-write.csv(fdg_plot_data, "~/Projects/GAM_models_Amyloid_converted/gam_modelling_data/fdg_gam_data.csv")
+# write.csv(fdg_plot_data, "~/Projects/GAM_models_Amyloid_converted/gam_modelling_data/fdg_gam_data.csv")
 
 #############################################################################
 # MRI: Meta-ROI
@@ -521,7 +523,7 @@ meta_roi_plot_data <- meta_roi_plot_data %>%
 meta_roi_plot_data <- meta_roi_plot_data %>%
   dplyr::select(RID, EXAMDATE, diags, meta_ROI, PTGENDER, PTEDUCAT, apoe, age, adjusted_new_time)
 
-write.csv(meta_roi_plot_data, "~/Projects/GAM_models_Amyloid_converted/gam_modelling_data/meta_roi_gam_data_no_adni1.csv")
+# write.csv(meta_roi_plot_data, "~/Projects/GAM_models_Amyloid_converted/gam_modelling_data/meta_roi_gam_data_no_adni1.csv")
 
 #putting together Hippocampal Volume data
 hippocampal_volume_plot_data <- mri_plot_data %>%
@@ -533,7 +535,7 @@ hippocampal_volume_plot_data <- hippocampal_volume_plot_data %>%
 hippocampal_volume_plot_data <- hippocampal_volume_plot_data %>%
   dplyr::select(RID, EXAMDATE, diags, hippocampal_volume, PTGENDER, PTEDUCAT, apoe, age, adjusted_new_time)
 
-write.csv(hippocampal_volume_plot_data, "~/Projects/GAM_models_Amyloid_converted/gam_modelling_data/hippocampal_volume_gam_data_no_adni1.csv")
+# write.csv(hippocampal_volume_plot_data, "~/Projects/GAM_models_Amyloid_converted/gam_modelling_data/hippocampal_volume_gam_data_no_adni1.csv")
 
 #####################################################################################
 # ADAS13
@@ -593,7 +595,7 @@ adas13_plot_data <- adas13_plot_data %>%
 adas13_plot_data <- adas13_plot_data %>%
   dplyr::select(RID, EXAMDATE, CDGLOBAL, diags, ADAS13, PTGENDER, PTEDUCAT, apoe, age, adjusted_new_time)
 
-write.csv(adas13_plot_data, "~/Projects/GAM_models_Amyloid_converted/gam_modelling_data/adas13_gam_data.csv")
+# write.csv(adas13_plot_data, "~/Projects/GAM_models_Amyloid_converted/gam_modelling_data/adas13_gam_data.csv")
 
 ########################################################################################################
 #MMSE
@@ -643,7 +645,7 @@ mmse_plot_data <- merge(cdglobal_data, mmse_plot_data, all = TRUE) %>%
 mmse_plot_data <- mmse_plot_data %>%
   dplyr::select(RID, EXAMDATE, CDGLOBAL, diags, MMSE, PTGENDER, PTEDUCAT, apoe, age, adjusted_new_time)
 
-write.csv(mmse_plot_data, "~/Projects/GAM_models_Amyloid_converted/gam_modelling_data/mmse_gam_data.csv")
+# write.csv(mmse_plot_data, "~/Projects/GAM_models_Amyloid_converted/gam_modelling_data/mmse_gam_data.csv")
 
 #########################################################################################################
 # CDRSB
@@ -680,7 +682,7 @@ cdrsb_plot_data <- cdrsb_plot_data %>%
 cdrsb_plot_data <- cdrsb_plot_data %>%
   dplyr::select(RID, CDR.DATE, CDGLOBAL, diags, CDRSB, PTGENDER, PTEDUCAT, apoe, age, adjusted_new_time)
 
-write.csv(cdrsb_plot_data, "~/Projects/GAM_models_Amyloid_converted/gam_modelling_data/cdrsb_gam_data.csv")
+# write.csv(cdrsb_plot_data, "~/Projects/GAM_models_Amyloid_converted/gam_modelling_data/cdrsb_gam_data.csv")
 
 ##########################################################################################################
 # mPACCtrailsB
@@ -841,7 +843,7 @@ mpacctrailsb_plot_data <- mpacctrailsb_plot_data %>%
 mpacctrailsb_plot_data <- mpacctrailsb_plot_data %>%
   dplyr::select(RID, EXAMDATE, CDGLOBAL, diags, mPACCtrailsB, PTGENDER, PTEDUCAT, apoe, age, adjusted_new_time)
 
-write.csv(mpacctrailsb_plot_data, "~/Projects/GAM_models_Amyloid_converted/gam_modelling_data/mpacctrailsb_gam_data.csv")
+# write.csv(mpacctrailsb_plot_data, "~/Projects/GAM_models_Amyloid_converted/gam_modelling_data/mpacctrailsb_gam_data.csv")
 
 ###########################################################################################################
 # TAU
@@ -914,7 +916,7 @@ tau_plot_data <- tau_plot_data %>%
 tau_plot_data <- tau_plot_data %>%
   dplyr::select(RID, EXAMDATE, CDGLOBAL, diags, TAU, PTGENDER, PTEDUCAT, apoe, age, adjusted_new_time)
 
-write.csv(tau_plot_data, "~/Projects/GAM_models_Amyloid_converted/gam_modelling_data/tau_gam_data.csv")
+# write.csv(tau_plot_data, "~/Projects/GAM_models_Amyloid_converted/gam_modelling_data/tau_gam_data.csv")
 
 ###########################################################################################################
 # PTAU
@@ -929,7 +931,7 @@ ptau_plot_data <- ptau_plot_data %>%
 ptau_plot_data <- ptau_plot_data %>%
   dplyr::select(RID, EXAMDATE, CDGLOBAL, diags, PTAU, PTGENDER, PTEDUCAT, apoe, age, adjusted_new_time)
 
-write.csv(ptau_plot_data, "~/Projects/GAM_models_Amyloid_converted/gam_modelling_data/ptau_gam_data.csv")
+# write.csv(ptau_plot_data, "~/Projects/GAM_models_Amyloid_converted/gam_modelling_data/ptau_gam_data.csv")
 
 ###########################################################################################################
 # ABETA
@@ -944,7 +946,7 @@ abeta_plot_data <- abeta_plot_data %>%
 abeta_plot_data <- abeta_plot_data %>%
   dplyr::select(RID, EXAMDATE, CDGLOBAL, diags, ABETA, PTGENDER, PTEDUCAT, apoe, age, adjusted_new_time)
 
-write.csv(abeta_plot_data, "~/Projects/GAM_models_Amyloid_converted/gam_modelling_data/abeta_gam_data.csv")
+# write.csv(abeta_plot_data, "~/Projects/GAM_models_Amyloid_converted/gam_modelling_data/abeta_gam_data.csv")
 
 ############################################################################################################
 #E-COG: Subject
@@ -1018,7 +1020,7 @@ ecog_s_plot_data <- merge(cdglobal_data, ecog_s_plot_data, all = TRUE) %>%
 ecog_s_plot_data <- ecog_s_plot_data %>%
   dplyr::select(RID, VISDATE, CDGLOBAL, diags, EcogGlobal, PTGENDER, PTEDUCAT, apoe, age, adjusted_new_time)
 
-write.csv(ecog_s_plot_data, "~/Projects/GAM_models_Amyloid_converted/gam_modelling_data/ecog_s_gam_data.csv")
+# write.csv(ecog_s_plot_data, "~/Projects/GAM_models_Amyloid_converted/gam_modelling_data/ecog_s_gam_data.csv")
 
 ############################################################################################################
 #E-COG: Partner
@@ -1087,4 +1089,4 @@ ecog_p_plot_data <- merge(cdglobal_data, ecog_p_plot_data, all = TRUE) %>%
 ecog_p_plot_data <- ecog_p_plot_data %>%
   dplyr::select(RID, VISDATE, CDGLOBAL, diags, EcogGlobal, PTGENDER, PTEDUCAT, apoe, age, adjusted_new_time)
 
-write.csv(ecog_p_plot_data, "~/Projects/GAM_models_Amyloid_converted/gam_modelling_data/ecog_p_gam_data.csv")
+# write.csv(ecog_p_plot_data, "~/Projects/GAM_models_Amyloid_converted/gam_modelling_data/ecog_p_gam_data.csv")
