@@ -1,6 +1,5 @@
 # GAM_models_Amyloid_converted_SAA
 #######################################################################################
-
 Repo used for Paper: "Timing of Alzheimer’s Disease Biomarker Progressions: A Two-Decade 
 Observational Study from the Alzheimer’s Disease Neuroimaging Initiative (ADNI)
 By: Schaap, Thropp, & Tosun
