@@ -1,4 +1,4 @@
-# GAM_models_Amyloid_converted_SAA
+# GAM_models_Amyloid_converted
 #########################################################################################
 
 Repo used for Paper: "Timing of Alzheimer’s Disease Biomarker Progressions: A Two-Decade 
